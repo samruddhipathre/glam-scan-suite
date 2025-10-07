@@ -4,26 +4,25 @@ import path from "path";
 
 let lovableTagger = null;
 try {
-  // Try importing lovable-tagger only if it exists (for Lovable)
+  // Try to import lovable-tagger (exists in Lovable environment)
   lovableTagger = require("lovable-tagger").componentTagger;
 } catch {
-  // Skip if not available (for GitHub)
+  // Skip if running outside Lovable (like GitHub Pages)
   lovableTagger = () => null;
 }
 
 export default defineConfig(({ mode }) => {
-  // Detect if running on GitHub Pages
+  // Detect if running inside GitHub Actions (Pages)
   const isGitHub = process.env.GITHUB_ACTIONS === "true";
 
   return {
-    base: isGitHub ? "/Aavatar/" : "/", // 👈 change "Aavatar" if repo name differs
+    base: isGitHub ? "/glam-scan-suite/" : "/", // 👈 important for GitHub Pages
     server: {
       host: "::",
       port: 8080,
     },
     plugins: [
       react(),
-      // Only enable the tagger in development if it exists
       mode === "development" && lovableTagger(),
     ].filter(Boolean),
     resolve: {
@@ -33,3 +32,4 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
+
