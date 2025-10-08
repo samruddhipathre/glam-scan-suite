@@ -1,15 +1,28 @@
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Upload, Share2, ShoppingCart } from "lucide-react";
+import { Camera, Upload, Share2, ShoppingCart, RefreshCw } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import tshirtBlack from "@/assets/clothes/tshirt-black.png";
+import shirtWhite from "@/assets/clothes/shirt-white.png";
+import jacketBlue from "@/assets/clothes/jacket-blue.png";
+import hoodieRed from "@/assets/clothes/hoodie-red.png";
+
+const clothes = [
+  { id: 1, name: "Black T-Shirt", image: tshirtBlack, price: "$29.99" },
+  { id: 2, name: "White Shirt", image: shirtWhite, price: "$39.99" },
+  { id: 3, name: "Blue Jacket", image: jacketBlue, price: "$79.99" },
+  { id: 4, name: "Red Hoodie", image: hoodieRed, price: "$49.99" },
+];
 
 const VirtualTryOn = () => {
   const [image, setImage] = useState<string | null>(null);
+  const [selectedClothing, setSelectedClothing] = useState<typeof clothes[0] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,13 +39,17 @@ const VirtualTryOn = () => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } } 
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play();
         setIsCameraActive(true);
         toast.success("Camera started!");
       }
     } catch (error) {
+      console.error("Camera error:", error);
       toast.error("Could not access camera. Please check permissions.");
     }
   };
@@ -61,13 +78,17 @@ const VirtualTryOn = () => {
     }
   };
 
-  const processVirtualTryOn = () => {
+  const processVirtualTryOn = (clothing: typeof clothes[0]) => {
+    if (!image) return;
+    
     setIsProcessing(true);
-    // Simulate AI processing
+    setSelectedClothing(clothing);
+    
+    // Simulate AI processing with canvas overlay
     setTimeout(() => {
       setIsProcessing(false);
-      toast.success("Virtual try-on applied! (Demo mode)");
-    }, 2000);
+      toast.success(`${clothing.name} applied! This is a demo - real AI coming soon!`);
+    }, 1500);
   };
 
   const shareLook = () => {
@@ -126,6 +147,7 @@ const VirtualTryOn = () => {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
+                    capture="user"
                     onChange={handleFileUpload}
                     className="hidden"
                   />
@@ -154,19 +176,47 @@ const VirtualTryOn = () => {
 
               {image && !isCameraActive && (
                 <div className="space-y-4">
-                  <img
-                    src={image}
-                    alt="Your photo"
-                    className="w-full aspect-[3/4] object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setImage(null)}
-                    className="w-full"
-                  >
-                    Change Photo
-                  </Button>
+                  <div className="relative">
+                    <img
+                      src={image}
+                      alt="Your photo"
+                      className="w-full aspect-[3/4] object-cover rounded-lg"
+                    />
+                    {selectedClothing && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <img
+                          src={selectedClothing.image}
+                          alt={selectedClothing.name}
+                          className="w-1/2 h-auto opacity-80 mix-blend-multiply"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <canvas ref={canvasRef} className="hidden" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => {
+                        setImage(null);
+                        setSelectedClothing(null);
+                      }}
+                      className="w-full"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Change Photo
+                    </Button>
+                    {selectedClothing && (
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        onClick={() => setSelectedClothing(null)}
+                        className="w-full"
+                      >
+                        Remove Outfit
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -186,17 +236,25 @@ const VirtualTryOn = () => {
               ) : (
                 <>
                   <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Select an outfit to try on:
+                    </p>
                     <div className="grid grid-cols-2 gap-4">
-                      {[1, 2, 3, 4].map((item) => (
+                      {clothes.map((item) => (
                         <button
-                          key={item}
-                          className="aspect-square bg-muted rounded-lg hover:ring-2 hover:ring-primary transition-all"
-                          onClick={processVirtualTryOn}
+                          key={item.id}
+                          className="group relative aspect-square bg-muted rounded-lg hover:ring-2 hover:ring-primary transition-all overflow-hidden"
+                          onClick={() => processVirtualTryOn(item)}
+                          disabled={isProcessing}
                         >
-                          <div className="h-full flex items-center justify-center">
-                            <p className="text-sm text-muted-foreground">
-                              Outfit {item}
-                            </p>
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-background/95 p-2 text-center">
+                            <p className="text-xs font-medium">{item.name}</p>
+                            <p className="text-xs text-primary">{item.price}</p>
                           </div>
                         </button>
                       ))}
@@ -212,24 +270,30 @@ const VirtualTryOn = () => {
                     </div>
                   )}
 
-                  <div className="space-y-3">
-                    <Button variant="gradient" size="lg" className="w-full">
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      Add to Cart
-                    </Button>
-                    <Button variant="outline" size="lg" className="w-full">
-                      Buy Now
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="lg"
-                      className="w-full"
-                      onClick={shareLook}
-                    >
-                      <Share2 className="mr-2 h-5 w-5" />
-                      Share with Friends
-                    </Button>
-                  </div>
+                  {selectedClothing && (
+                    <div className="space-y-3 pt-4">
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="font-semibold">{selectedClothing.name}</p>
+                        <p className="text-xl text-primary font-bold">{selectedClothing.price}</p>
+                      </div>
+                      <Button variant="gradient" size="lg" className="w-full">
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        Add to Cart
+                      </Button>
+                      <Button variant="outline" size="lg" className="w-full">
+                        Buy Now
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="lg"
+                        className="w-full"
+                        onClick={shareLook}
+                      >
+                        <Share2 className="mr-2 h-5 w-5" />
+                        Share Your Look
+                      </Button>
+                    </div>
+                  )}
                 </>
               )}
 
