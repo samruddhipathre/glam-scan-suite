@@ -155,8 +155,61 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Feature Showcase 2 */}
+      {/* Featured Styles Section */}
       <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Trending Styles</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Discover the hottest looks curated by our AI fashion experts
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <Card className="overflow-hidden hover:shadow-elegant transition-all duration-300">
+              <div className="aspect-[3/4] bg-gradient-hero"></div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-1">Casual Chic</h3>
+                <p className="text-sm text-muted-foreground mb-3">Effortless everyday style</p>
+                <Link to="/shop">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Shop Style
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden hover:shadow-elegant transition-all duration-300">
+              <div className="aspect-[3/4] bg-gradient-hero"></div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-1">Office Elegance</h3>
+                <p className="text-sm text-muted-foreground mb-3">Professional & polished</p>
+                <Link to="/shop">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Shop Style
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden hover:shadow-elegant transition-all duration-300">
+              <div className="aspect-[3/4] bg-gradient-hero"></div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-1">Evening Glamour</h3>
+                <p className="text-sm text-muted-foreground mb-3">Statement-making looks</p>
+                <Link to="/shop">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Shop Style
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Showcase 2 */}
+      <section className="py-20 gradient-hero">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
@@ -167,15 +220,15 @@ const Index = () => {
               />
             </div>
             <div className="space-y-6 order-1 md:order-2">
-              <h2 className="text-4xl font-bold">Curated Fashion Collection</h2>
+              <h2 className="text-4xl font-bold">Premium Fashion Collection</h2>
               <p className="text-lg text-muted-foreground">
-                Explore our carefully curated collection of premium fashion items.
-                Filter by style, size, color, and price. Every item can be virtually
-                tried on before you buy.
+                Explore our carefully curated collection with detailed fabric information,
+                accurate sizing, and competitive prices. Every item can be virtually
+                tried on with realistic AI-powered fitting.
               </p>
               <Link to="/shop">
                 <Button variant="gradient" size="lg">
-                  Shop Now
+                  Browse Collection
                   <ShoppingBag className="ml-2 h-5 w-5" />
                 </Button>
               </Link>

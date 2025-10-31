@@ -1,0 +1,10 @@
+project_id = "fwkmcythqizzfltxlkef"
+
+[functions.analyze-body]
+verify_jwt = false
+
+[functions.analyze-skin]
+verify_jwt = false
+
+[functions.generate-tryon]
+verify_jwt = false

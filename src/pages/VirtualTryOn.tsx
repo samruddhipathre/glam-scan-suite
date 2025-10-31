@@ -1,28 +1,44 @@
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Camera, Upload, Share2, ShoppingCart, RefreshCw } from "lucide-react";
+import { Camera, Upload, Share2, ShoppingCart, RefreshCw, Ruler } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import tshirtBlack from "@/assets/clothes/tshirt-black.png";
 import shirtWhite from "@/assets/clothes/shirt-white.png";
 import jacketBlue from "@/assets/clothes/jacket-blue.png";
 import hoodieRed from "@/assets/clothes/hoodie-red.png";
 
 const clothes = [
-  { id: 1, name: "Black T-Shirt", image: tshirtBlack, price: "$29.99" },
-  { id: 2, name: "White Shirt", image: shirtWhite, price: "$39.99" },
-  { id: 3, name: "Blue Jacket", image: jacketBlue, price: "$79.99" },
-  { id: 4, name: "Red Hoodie", image: hoodieRed, price: "$49.99" },
+  { id: 1, name: "Black T-Shirt", image: tshirtBlack, price: "₹1299" },
+  { id: 2, name: "White Shirt", image: shirtWhite, price: "₹1899" },
+  { id: 3, name: "Blue Jacket", image: jacketBlue, price: "₹3499" },
+  { id: 4, name: "Red Hoodie", image: hoodieRed, price: "₹2299" },
 ];
+
+interface BodyMeasurements {
+  bodyType: string;
+  measurements: {
+    chest: number;
+    waist: number;
+    hips: number;
+    shoulders: number;
+    height: number;
+  };
+  recommendedSize: string;
+  fitAdvice: string;
+}
 
 const VirtualTryOn = () => {
   const [image, setImage] = useState<string | null>(null);
   const [selectedClothing, setSelectedClothing] = useState<typeof clothes[0] | null>(null);
+  const [tryonImage, setTryonImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isAnalyzingBody, setIsAnalyzingBody] = useState(false);
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurements | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,6 +47,9 @@ const VirtualTryOn = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImage(e.target?.result as string);
+        setTryonImage(null);
+        setSelectedClothing(null);
+        setBodyMeasurements(null);
         toast.success("Photo uploaded successfully!");
       };
       reader.readAsDataURL(file);
@@ -64,6 +83,9 @@ const VirtualTryOn = () => {
         ctx.drawImage(videoRef.current, 0, 0);
         const photoData = canvas.toDataURL("image/jpeg");
         setImage(photoData);
+        setTryonImage(null);
+        setSelectedClothing(null);
+        setBodyMeasurements(null);
         stopCamera();
         toast.success("Photo captured!");
       }
@@ -78,21 +100,65 @@ const VirtualTryOn = () => {
     }
   };
 
-  const processVirtualTryOn = (clothing: typeof clothes[0]) => {
+  const analyzeBody = async () => {
+    if (!image) return;
+    
+    setIsAnalyzingBody(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-body', {
+        body: { image }
+      });
+
+      if (error) throw error;
+
+      setBodyMeasurements(data);
+      toast.success("Body analysis complete!");
+    } catch (error) {
+      console.error('Body analysis error:', error);
+      toast.error("Failed to analyze body measurements. Please try again.");
+    } finally {
+      setIsAnalyzingBody(false);
+    }
+  };
+
+  const processVirtualTryOn = async (clothing: typeof clothes[0]) => {
     if (!image) return;
     
     setIsProcessing(true);
     setSelectedClothing(clothing);
     
-    // Simulate AI processing with canvas overlay
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-tryon', {
+        body: { 
+          userImage: image,
+          clothingImage: clothing.image,
+          clothingName: clothing.name
+        }
+      });
+
+      if (error) {
+        if (error.message.includes('Rate limit')) {
+          toast.error("Rate limit exceeded. Please wait a moment and try again.");
+        } else if (error.message.includes('credits')) {
+          toast.error("AI credits depleted. Please add credits to continue.");
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      setTryonImage(data.tryonImage);
+      toast.success(`${clothing.name} applied successfully!`);
+    } catch (error) {
+      console.error('Virtual try-on error:', error);
+      toast.error("Failed to generate virtual try-on. Please try again.");
+    } finally {
       setIsProcessing(false);
-      toast.success(`${clothing.name} applied! This is a demo - real AI coming soon!`);
-    }, 1500);
+    }
   };
 
   const shareLook = () => {
-    toast.success("Share functionality will be available soon!");
+    toast.success("Share functionality coming soon!");
   };
 
   return (
@@ -101,9 +167,9 @@ const VirtualTryOn = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Virtual Try-On</h1>
+          <h1 className="text-4xl font-bold mb-2">AI Virtual Try-On</h1>
           <p className="text-muted-foreground text-lg">
-            See how clothes look on you using AI technology
+            See realistic virtual try-on with AI-powered body analysis
           </p>
         </div>
 
@@ -178,45 +244,51 @@ const VirtualTryOn = () => {
                 <div className="space-y-4">
                   <div className="relative">
                     <img
-                      src={image}
+                      src={tryonImage || image}
                       alt="Your photo"
                       className="w-full aspect-[3/4] object-cover rounded-lg"
                     />
-                    {selectedClothing && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <img
-                          src={selectedClothing.image}
-                          alt={selectedClothing.name}
-                          className="w-1/2 h-auto opacity-80 mix-blend-multiply"
-                        />
-                      </div>
-                    )}
                   </div>
-                  <canvas ref={canvasRef} className="hidden" />
+                  
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       variant="outline"
                       size="lg"
                       onClick={() => {
                         setImage(null);
+                        setTryonImage(null);
                         setSelectedClothing(null);
+                        setBodyMeasurements(null);
                       }}
                       className="w-full"
                     >
                       <RefreshCw className="mr-2 h-4 w-4" />
                       Change Photo
                     </Button>
-                    {selectedClothing && (
-                      <Button
-                        variant="ghost"
-                        size="lg"
-                        onClick={() => setSelectedClothing(null)}
-                        className="w-full"
-                      >
-                        Remove Outfit
-                      </Button>
-                    )}
+                    <Button
+                      variant="gradient"
+                      size="lg"
+                      onClick={analyzeBody}
+                      disabled={isAnalyzingBody}
+                      className="w-full"
+                    >
+                      <Ruler className="mr-2 h-4 w-4" />
+                      {isAnalyzingBody ? "Analyzing..." : "Body Analysis"}
+                    </Button>
                   </div>
+
+                  {bodyMeasurements && (
+                    <Card className="bg-muted">
+                      <CardContent className="p-4 space-y-2">
+                        <h3 className="font-semibold text-sm">Body Analysis Results</h3>
+                        <div className="text-xs space-y-1">
+                          <p><span className="font-medium">Body Type:</span> {bodyMeasurements.bodyType}</p>
+                          <p><span className="font-medium">Recommended Size:</span> {bodyMeasurements.recommendedSize}</p>
+                          <p className="text-muted-foreground pt-1">{bodyMeasurements.fitAdvice}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -230,20 +302,20 @@ const VirtualTryOn = () => {
               {!image ? (
                 <div className="aspect-[3/4] bg-muted rounded-lg flex items-center justify-center">
                   <p className="text-muted-foreground text-center px-4">
-                    Upload or capture your photo first to see the magic happen
+                    Upload or capture your photo first to see realistic AI try-on
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      Select an outfit to try on:
+                      Select an outfit to try on with AI:
                     </p>
                     <div className="grid grid-cols-2 gap-4">
                       {clothes.map((item) => (
                         <button
                           key={item.id}
-                          className="group relative aspect-square bg-muted rounded-lg hover:ring-2 hover:ring-primary transition-all overflow-hidden"
+                          className="group relative aspect-square bg-muted rounded-lg hover:ring-2 hover:ring-primary transition-all overflow-hidden disabled:opacity-50"
                           onClick={() => processVirtualTryOn(item)}
                           disabled={isProcessing}
                         >
@@ -265,16 +337,21 @@ const VirtualTryOn = () => {
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                       <p className="text-muted-foreground">
-                        Applying virtual try-on...
+                        AI is generating realistic try-on...
                       </p>
                     </div>
                   )}
 
-                  {selectedClothing && (
+                  {selectedClothing && tryonImage && (
                     <div className="space-y-3 pt-4">
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="font-semibold">{selectedClothing.name}</p>
                         <p className="text-xl text-primary font-bold">{selectedClothing.price}</p>
+                        {bodyMeasurements && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Recommended size: {bodyMeasurements.recommendedSize}
+                          </p>
+                        )}
                       </div>
                       <Button variant="gradient" size="lg" className="w-full">
                         <ShoppingCart className="mr-2 h-5 w-5" />
@@ -300,10 +377,10 @@ const VirtualTryOn = () => {
               <div className="pt-4 border-t">
                 <h3 className="font-semibold mb-2">How it works:</h3>
                 <ol className="text-sm text-muted-foreground space-y-2">
-                  <li>1. Upload or capture your photo</li>
-                  <li>2. Select an outfit from our collection</li>
-                  <li>3. See how it looks on you instantly</li>
-                  <li>4. Add to cart or share with friends</li>
+                  <li>1. Upload or capture your full-body photo</li>
+                  <li>2. Get AI body analysis for perfect sizing</li>
+                  <li>3. Select outfits to see realistic try-on</li>
+                  <li>4. Add to cart with recommended size</li>
                 </ol>
               </div>
             </CardContent>
