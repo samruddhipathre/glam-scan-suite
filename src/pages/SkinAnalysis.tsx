@@ -46,18 +46,29 @@ const SkinAnalysis = () => {
     setAnalysisComplete(false);
 
     try {
+      console.log('Calling analyze-skin edge function...');
       const { data, error } = await supabase.functions.invoke('analyze-skin', {
         body: { image }
       });
 
-      if (error) throw error;
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No analysis data returned from AI');
+      }
 
       setAnalysis(data);
       setAnalysisComplete(true);
       toast.success("Skin analysis complete!");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Skin analysis error:', error);
-      toast.error("Failed to analyze skin tone. Please try again.");
+      const errorMessage = error?.message || 'Failed to analyze skin tone';
+      toast.error(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }

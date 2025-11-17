@@ -123,13 +123,27 @@ const VirtualTryOn = () => {
 
   const convertImageToBase64 = async (imageUrl: string): Promise<string> => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
+      // Fetch the image with no-cors to handle local assets
+      const response = await fetch(imageUrl, { mode: 'no-cors' });
+      
+      // Create a new image element to load the asset
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+          } else {
+            reject(new Error('Failed to get canvas context'));
+          }
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = imageUrl;
       });
     } catch (error) {
       console.error('Error converting image to base64:', error);
@@ -145,8 +159,11 @@ const VirtualTryOn = () => {
     
     try {
       // Convert clothing image to base64
+      console.log('Converting clothing image to base64...');
       const clothingImageBase64 = await convertImageToBase64(clothing.image);
+      console.log('Clothing image converted successfully');
       
+      console.log('Calling generate-tryon edge function...');
       const { data, error } = await supabase.functions.invoke('generate-tryon', {
         body: { 
           userImage: image,
@@ -155,22 +172,31 @@ const VirtualTryOn = () => {
         }
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
-        if (error.message.includes('Rate limit')) {
+        console.error('Edge function error:', error);
+        if (error.message?.includes('Rate limit')) {
           toast.error("Rate limit exceeded. Please wait a moment and try again.");
-        } else if (error.message.includes('credits')) {
+        } else if (error.message?.includes('credits')) {
           toast.error("AI credits depleted. Please add credits to continue.");
         } else {
-          throw error;
+          toast.error(error.message || "Failed to generate virtual try-on. Please try again.");
         }
+        return;
+      }
+
+      if (!data?.tryonImage) {
+        console.error('No tryonImage in response:', data);
+        toast.error("No try-on image returned from AI");
         return;
       }
 
       setTryonImage(data.tryonImage);
       toast.success(`${clothing.name} applied successfully!`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Virtual try-on error:', error);
-      toast.error("Failed to generate virtual try-on. Please try again.");
+      toast.error(error?.message || "Failed to generate virtual try-on. Please try again.");
     } finally {
       setIsProcessing(false);
     }
