@@ -15,6 +15,10 @@ const clothes = [
   { id: 2, name: "White Shirt", image: shirtWhite, price: "₹1899" },
   { id: 3, name: "Blue Jacket", image: jacketBlue, price: "₹3499" },
   { id: 4, name: "Red Hoodie", image: hoodieRed, price: "₹2299" },
+  { id: 5, name: "Classic Polo", image: tshirtBlack, price: "₹1499" },
+  { id: 6, name: "Denim Jacket", image: jacketBlue, price: "₹3699" },
+  { id: 7, name: "Formal Blazer", image: jacketBlue, price: "₹4999" },
+  { id: 8, name: "Cozy Hoodie", image: hoodieRed, price: "₹2399" },
 ];
 
 interface BodyMeasurements {
@@ -158,6 +162,9 @@ const VirtualTryOn = () => {
     setSelectedClothing(clothing);
     
     try {
+      if (!bodyMeasurements) {
+        toast.message('Tip: Run Body Analysis for a better fit');
+      }
       // Convert clothing image to base64
       console.log('Converting clothing image to base64...');
       const clothingImageBase64 = await convertImageToBase64(clothing.image);
@@ -168,7 +175,8 @@ const VirtualTryOn = () => {
         body: { 
           userImage: image,
           clothingImage: clothingImageBase64,
-          clothingName: clothing.name
+          clothingName: clothing.name,
+          bodyMeasurements
         }
       });
 

@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userImage, clothingImage, clothingName } = await req.json();
+    const { userImage, clothingImage, clothingName, bodyMeasurements } = await req.json();
     
     if (!userImage || !clothingImage) {
       return new Response(
@@ -28,6 +28,11 @@ serve(async (req) => {
 
     console.log('Generating virtual try-on for:', clothingName);
 
+    const fitDetails = bodyMeasurements ?
+      `\n\nFit guidance (cm): chest ${bodyMeasurements?.measurements?.chest}, waist ${bodyMeasurements?.measurements?.waist}, hips ${bodyMeasurements?.measurements?.hips}, shoulders ${bodyMeasurements?.measurements?.shoulders}, height ${bodyMeasurements?.measurements?.height}. Recommended size: ${bodyMeasurements?.recommendedSize}.\n- Scale and warp garment to match chest/shoulders/waist proportions.\n- Align neckline and shoulder seams to the person.\n- Maintain natural drape, folds, and perspective.\n- Respect occlusions (arms/hair) and keep lighting/shadows consistent.\n- Avoid over-stretching/flattening.\n` : '';
+
+    const promptText = `Create a realistic virtual try-on image. Take the person from the first image and realistically overlay the clothing item (${clothingName}) from the second image onto them. Make sure the clothing fits naturally on their body, follows their body contours, and looks like they are actually wearing it. Maintain realistic shadows, folds, and draping. Keep the person's pose and background the same.${fitDetails}`;
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -40,18 +45,9 @@ serve(async (req) => {
           {
             role: 'user',
             content: [
-              {
-                type: 'text',
-                text: `Create a realistic virtual try-on image. Take the person from the first image and realistically overlay the clothing item (${clothingName}) from the second image onto them. Make sure the clothing fits naturally on their body, follows their body contours, and looks like they are actually wearing it. Maintain realistic shadows, folds, and draping. Keep the person's pose and background the same.`
-              },
-              {
-                type: 'image_url',
-                image_url: { url: userImage }
-              },
-              {
-                type: 'image_url',
-                image_url: { url: clothingImage }
-              }
+              { type: 'text', text: promptText },
+              { type: 'image_url', image_url: { url: userImage } },
+              { type: 'image_url', image_url: { url: clothingImage } }
             ]
           }
         ],
