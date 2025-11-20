@@ -9,16 +9,28 @@ import tshirtBlack from "@/assets/clothes/tshirt-black.png";
 import shirtWhite from "@/assets/clothes/shirt-white.png";
 import jacketBlue from "@/assets/clothes/jacket-blue.png";
 import hoodieRed from "@/assets/clothes/hoodie-red.png";
+import cardiganGray from "@/assets/clothes/cardigan-gray.png";
+import trenchcoatBeige from "@/assets/clothes/trenchcoat-beige.png";
+import bomberGreen from "@/assets/clothes/bomber-green.png";
+import poloNavy from "@/assets/clothes/polo-navy.png";
+import flannelRed from "@/assets/clothes/flannel-red.png";
+import sweaterMaroon from "@/assets/clothes/sweater-maroon.png";
+import blazerCharcoal from "@/assets/clothes/blazer-charcoal.png";
+import utilityOlive from "@/assets/clothes/utility-olive.png";
 
 const clothes = [
   { id: 1, name: "Black T-Shirt", image: tshirtBlack, price: "₹1299" },
   { id: 2, name: "White Shirt", image: shirtWhite, price: "₹1899" },
   { id: 3, name: "Blue Jacket", image: jacketBlue, price: "₹3499" },
   { id: 4, name: "Red Hoodie", image: hoodieRed, price: "₹2299" },
-  { id: 5, name: "Classic Polo", image: tshirtBlack, price: "₹1499" },
-  { id: 6, name: "Denim Jacket", image: jacketBlue, price: "₹3699" },
-  { id: 7, name: "Formal Blazer", image: jacketBlue, price: "₹4999" },
-  { id: 8, name: "Cozy Hoodie", image: hoodieRed, price: "₹2399" },
+  { id: 5, name: "Gray Cardigan", image: cardiganGray, price: "₹2499" },
+  { id: 6, name: "Beige Trench Coat", image: trenchcoatBeige, price: "₹4999" },
+  { id: 7, name: "Green Bomber Jacket", image: bomberGreen, price: "₹3299" },
+  { id: 8, name: "Navy Polo Shirt", image: poloNavy, price: "₹1599" },
+  { id: 9, name: "Flannel Shirt", image: flannelRed, price: "₹1799" },
+  { id: 10, name: "Maroon Sweater", image: sweaterMaroon, price: "₹2199" },
+  { id: 11, name: "Charcoal Blazer", image: blazerCharcoal, price: "₹5499" },
+  { id: 12, name: "Olive Utility Jacket", image: utilityOlive, price: "₹3799" },
 ];
 
 interface BodyMeasurements {

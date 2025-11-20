@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Send, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Message {
   id: number;
@@ -20,6 +22,7 @@ const Chat = () => {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const suggestedQuestions = [
     "What colors suit my skin tone?",
@@ -28,8 +31,8 @@ const Chat = () => {
     "Summer wardrobe essentials",
   ];
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: messages.length + 1,
@@ -37,18 +40,52 @@ const Chat = () => {
       isUser: true,
     };
 
-    setMessages([...messages, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    const userInput = input;
     setInput("");
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      console.log('Sending message to AI...');
+      
+      const { data, error } = await supabase.functions.invoke('fashion-chat', {
+        body: {
+          messages: updatedMessages.map(m => ({
+            role: m.isUser ? 'user' : 'assistant',
+            content: m.text
+          }))
+        }
+      });
+
+      if (error) {
+        console.error('Error calling fashion-chat:', error);
+        throw error;
+      }
+
+      if (!data?.message) {
+        throw new Error('No response from AI');
+      }
+
+      console.log('AI response received');
+
       const aiResponse: Message = {
-        id: messages.length + 2,
-        text: `Great question! Based on your query about "${input}", I'd recommend exploring our personalized recommendations. You can also try our virtual try-on feature to see how different styles look on you. Would you like me to suggest some specific items?`,
+        id: updatedMessages.length + 1,
+        text: data.message,
         isUser: false,
       };
+      
       setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      toast.error('Failed to get response. Please try again.');
+      
+      // Remove the user message if AI failed
+      setMessages(messages);
+      setInput(userInput);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSuggestedQuestion = (question: string) => {
@@ -122,11 +159,16 @@ const Chat = () => {
                 placeholder="Ask me anything about fashion..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                onKeyPress={(e) => e.key === "Enter" && !isLoading && sendMessage()}
                 className="flex-1"
+                disabled={isLoading}
               />
-              <Button variant="gradient" onClick={sendMessage}>
-                <Send className="h-4 w-4" />
+              <Button variant="gradient" onClick={sendMessage} disabled={isLoading}>
+                {isLoading ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </CardContent>
