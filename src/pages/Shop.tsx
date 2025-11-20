@@ -18,6 +18,26 @@ import tshirtBlack from "@/assets/clothes/tshirt-black.png";
 import shirtWhite from "@/assets/clothes/shirt-white.png";
 import jacketBlue from "@/assets/clothes/jacket-blue.png";
 import hoodieRed from "@/assets/clothes/hoodie-red.png";
+import cardiganGray from "@/assets/clothes/cardigan-gray.png";
+import trenchcoatBeige from "@/assets/clothes/trenchcoat-beige.png";
+import bomberGreen from "@/assets/clothes/bomber-green.png";
+import poloNavy from "@/assets/clothes/polo-navy.png";
+import flannelRed from "@/assets/clothes/flannel-red.png";
+import sweaterMaroon from "@/assets/clothes/sweater-maroon.png";
+import blazerCharcoal from "@/assets/clothes/blazer-charcoal.png";
+import utilityOlive from "@/assets/clothes/utility-olive.png";
+import jeansBlue from "@/assets/clothes/jeans-blue.png";
+import trousersBlack from "@/assets/clothes/trousers-black.png";
+import chinosKhaki from "@/assets/clothes/chinos-khaki.png";
+import dressBlack from "@/assets/clothes/dress-black.png";
+import dressFloral from "@/assets/clothes/dress-floral.png";
+import dressBurgundy from "@/assets/clothes/dress-burgundy.png";
+import kurtaWhite from "@/assets/clothes/kurta-white.png";
+import kurtaNavy from "@/assets/clothes/kurta-navy.png";
+import skirtBeige from "@/assets/clothes/skirt-beige.png";
+import joggersGray from "@/assets/clothes/joggers-gray.png";
+import shortsDenim from "@/assets/clothes/shorts-denim.png";
+import shirtLinen from "@/assets/clothes/shirt-linen.png";
 
 interface Product {
   id: number;
@@ -34,6 +54,7 @@ const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const products: Product[] = [
+    // Tops
     {
       id: 1,
       name: "Premium Black T-Shirt",
@@ -54,7 +75,53 @@ const Shop = () => {
     },
     {
       id: 3,
-      name: "Denim Blue Jacket",
+      name: "Navy Polo Shirt",
+      price: 1599,
+      category: "tops",
+      sizes: ["S", "M", "L", "XL", "XXL"],
+      color: "Navy Blue",
+      image: poloNavy,
+    },
+    {
+      id: 4,
+      name: "Flannel Shirt",
+      price: 1799,
+      category: "tops",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Red Check",
+      image: flannelRed,
+    },
+    {
+      id: 5,
+      name: "Linen Shirt",
+      price: 2099,
+      category: "tops",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Cream",
+      image: shirtLinen,
+    },
+    {
+      id: 6,
+      name: "Maroon Sweater",
+      price: 2199,
+      category: "tops",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Maroon",
+      image: sweaterMaroon,
+    },
+    {
+      id: 7,
+      name: "Gray Cardigan",
+      price: 2499,
+      category: "tops",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Gray",
+      image: cardiganGray,
+    },
+    // Outerwear
+    {
+      id: 8,
+      name: "Blue Denim Jacket",
       price: 3499,
       category: "outerwear",
       sizes: ["S", "M", "L", "XL"],
@@ -62,8 +129,8 @@ const Shop = () => {
       image: jacketBlue,
     },
     {
-      id: 4,
-      name: "Cozy Red Hoodie",
+      id: 9,
+      name: "Red Hoodie",
       price: 2299,
       category: "outerwear",
       sizes: ["S", "M", "L", "XL", "XXL"],
@@ -71,116 +138,142 @@ const Shop = () => {
       image: hoodieRed,
     },
     {
-      id: 5,
-      name: "Classic Blazer",
-      price: 4999,
-      category: "outerwear",
-      sizes: ["XS", "S", "M", "L", "XL"],
-      color: "Black",
-    },
-    {
-      id: 6,
-      name: "Silk Blouse",
-      price: 2499,
-      category: "tops",
-      sizes: ["XS", "S", "M", "L"],
-      color: "Ivory",
-    },
-    {
-      id: 7,
-      name: "Wide Leg Trousers",
-      price: 2799,
-      category: "bottoms",
-      sizes: ["XS", "S", "M", "L", "XL"],
-      color: "Navy",
-    },
-    {
-      id: 8,
-      name: "Leather Jacket",
-      price: 8999,
-      category: "outerwear",
-      sizes: ["S", "M", "L"],
-      color: "Brown",
-    },
-    {
-      id: 9,
-      name: "Midi Dress",
-      price: 3499,
-      category: "dresses",
-      sizes: ["XS", "S", "M", "L", "XL"],
-      color: "Burgundy",
-    },
-    {
       id: 10,
-      name: "Cashmere Sweater",
-      price: 4599,
-      category: "tops",
+      name: "Charcoal Blazer",
+      price: 5499,
+      category: "outerwear",
       sizes: ["S", "M", "L", "XL"],
-      color: "Camel",
+      color: "Charcoal",
+      image: blazerCharcoal,
     },
     {
       id: 11,
-      name: "Cotton Polo Shirt",
-      price: 1599,
-      category: "tops",
-      sizes: ["S", "M", "L", "XL", "XXL"],
-      color: "Navy Blue",
+      name: "Beige Trench Coat",
+      price: 4999,
+      category: "outerwear",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Beige",
+      image: trenchcoatBeige,
     },
     {
       id: 12,
+      name: "Green Bomber Jacket",
+      price: 3299,
+      category: "outerwear",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Green",
+      image: bomberGreen,
+    },
+    {
+      id: 13,
+      name: "Olive Utility Jacket",
+      price: 3799,
+      category: "outerwear",
+      sizes: ["S", "M", "L", "XL"],
+      color: "Olive",
+      image: utilityOlive,
+    },
+    // Bottoms
+    {
+      id: 14,
       name: "Slim Fit Jeans",
       price: 2199,
       category: "bottoms",
       sizes: ["28", "30", "32", "34", "36"],
       color: "Dark Blue",
+      image: jeansBlue,
     },
     {
-      id: 13,
+      id: 15,
       name: "Formal Trousers",
       price: 1899,
       category: "bottoms",
       sizes: ["28", "30", "32", "34", "36"],
-      color: "Charcoal Grey",
+      color: "Black",
+      image: trousersBlack,
     },
     {
-      id: 14,
-      name: "Casual Kurta",
+      id: 16,
+      name: "Khaki Chinos",
+      price: 1999,
+      category: "bottoms",
+      sizes: ["28", "30", "32", "34", "36"],
+      color: "Khaki",
+      image: chinosKhaki,
+    },
+    {
+      id: 17,
+      name: "Gray Joggers",
+      price: 1599,
+      category: "bottoms",
+      sizes: ["S", "M", "L", "XL", "XXL"],
+      color: "Gray",
+      image: joggersGray,
+    },
+    {
+      id: 18,
+      name: "Denim Shorts",
+      price: 1399,
+      category: "bottoms",
+      sizes: ["28", "30", "32", "34"],
+      color: "Blue",
+      image: shortsDenim,
+    },
+    {
+      id: 19,
+      name: "Beige Pleated Skirt",
+      price: 1799,
+      category: "bottoms",
+      sizes: ["XS", "S", "M", "L"],
+      color: "Beige",
+      image: skirtBeige,
+    },
+    // Dresses
+    {
+      id: 20,
+      name: "Black Midi Dress",
+      price: 3299,
+      category: "dresses",
+      sizes: ["XS", "S", "M", "L", "XL"],
+      color: "Black",
+      image: dressBlack,
+    },
+    {
+      id: 21,
+      name: "Floral Maxi Dress",
+      price: 2899,
+      category: "dresses",
+      sizes: ["XS", "S", "M", "L", "XL"],
+      color: "Floral",
+      image: dressFloral,
+    },
+    {
+      id: 22,
+      name: "Burgundy Cocktail Dress",
+      price: 3499,
+      category: "dresses",
+      sizes: ["XS", "S", "M", "L", "XL"],
+      color: "Burgundy",
+      image: dressBurgundy,
+    },
+    // Ethnic Wear
+    {
+      id: 23,
+      name: "White Cotton Kurta",
       price: 1699,
       category: "ethnic",
       sizes: ["S", "M", "L", "XL", "XXL"],
       color: "White",
+      image: kurtaWhite,
     },
     {
-      id: 15,
-      name: "Designer Kurta Set",
-      price: 3299,
+      id: 24,
+      name: "Navy Embroidered Kurta",
+      price: 2299,
       category: "ethnic",
-      sizes: ["S", "M", "L", "XL"],
-      color: "Royal Blue",
-    },
-    {
-      id: 16,
-      name: "Printed Summer Dress",
-      price: 2499,
-      category: "dresses",
-      sizes: ["XS", "S", "M", "L", "XL"],
-      color: "Floral",
-    },
-    {
-      id: 17,
-      name: "Sports Track Pants",
-      price: 1299,
-      category: "bottoms",
       sizes: ["S", "M", "L", "XL", "XXL"],
-      color: "Black",
-    },
-    {
-      id: 18,
-      name: "Bomber Jacket",
-      price: 3999,
-      category: "outerwear",
-      sizes: ["S", "M", "L", "XL"],
-      color: "Olive Green",
+      color: "Navy Blue",
+      image: kurtaNavy,
     },
   ];
 

@@ -17,6 +17,14 @@ import flannelRed from "@/assets/clothes/flannel-red.png";
 import sweaterMaroon from "@/assets/clothes/sweater-maroon.png";
 import blazerCharcoal from "@/assets/clothes/blazer-charcoal.png";
 import utilityOlive from "@/assets/clothes/utility-olive.png";
+import jeansBlue from "@/assets/clothes/jeans-blue.png";
+import trousersBlack from "@/assets/clothes/trousers-black.png";
+import chinosKhaki from "@/assets/clothes/chinos-khaki.png";
+import dressBlack from "@/assets/clothes/dress-black.png";
+import dressFloral from "@/assets/clothes/dress-floral.png";
+import kurtaWhite from "@/assets/clothes/kurta-white.png";
+import kurtaNavy from "@/assets/clothes/kurta-navy.png";
+import skirtBeige from "@/assets/clothes/skirt-beige.png";
 
 const clothes = [
   { id: 1, name: "Black T-Shirt", image: tshirtBlack, price: "₹1299" },
@@ -31,6 +39,14 @@ const clothes = [
   { id: 10, name: "Maroon Sweater", image: sweaterMaroon, price: "₹2199" },
   { id: 11, name: "Charcoal Blazer", image: blazerCharcoal, price: "₹5499" },
   { id: 12, name: "Olive Utility Jacket", image: utilityOlive, price: "₹3799" },
+  { id: 13, name: "Slim Fit Jeans", image: jeansBlue, price: "₹2199" },
+  { id: 14, name: "Black Trousers", image: trousersBlack, price: "₹1899" },
+  { id: 15, name: "Khaki Chinos", image: chinosKhaki, price: "₹1999" },
+  { id: 16, name: "Black Midi Dress", image: dressBlack, price: "₹3299" },
+  { id: 17, name: "Floral Maxi Dress", image: dressFloral, price: "₹2899" },
+  { id: 18, name: "White Cotton Kurta", image: kurtaWhite, price: "₹1699" },
+  { id: 19, name: "Navy Embroidered Kurta", image: kurtaNavy, price: "₹2299" },
+  { id: 20, name: "Beige Pleated Skirt", image: skirtBeige, price: "₹1799" },
 ];
 
 interface BodyMeasurements {
