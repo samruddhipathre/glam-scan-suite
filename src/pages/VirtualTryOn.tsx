@@ -145,9 +145,16 @@ const VirtualTryOn = () => {
 
       setBodyMeasurements(data);
       toast.success("Body analysis complete!");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Body analysis error:', error);
-      toast.error("Failed to analyze body measurements. Please try again.");
+      const message = error?.message || '';
+      if (message.includes('Rate limit')) {
+        toast.error('Rate limit exceeded. Please wait a moment and try again.');
+      } else if (message.includes('credits')) {
+        toast.error('AI credits depleted. Please add credits in Settings → Workspace → Usage.');
+      } else {
+        toast.error('Failed to analyze body measurements. Please try again.');
+      }
     } finally {
       setIsAnalyzingBody(false);
     }
