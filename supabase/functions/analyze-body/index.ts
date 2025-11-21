@@ -39,20 +39,26 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert body measurement analyst for fashion. Analyze the person in the image and provide accurate body measurements and body type classification. Be professional and precise.
+            content: `You are an expert body measurement analyst for fashion ecommerce.
+Analyze the person in the image and estimate body type and key measurements for clothing fit.
 
-Return ONLY valid JSON with this exact structure:
+CRITICAL INSTRUCTIONS:
+- Respond with JSON ONLY. No prose, no explanations, no code fences.
+- All measurements MUST be numbers (no units, no strings like "32 inches").
+- If you are unsure, provide your best reasonable estimate rather than null.
+
+Return EXACTLY this JSON shape:
 {
-  "bodyType": "string (hourglass/pear/apple/rectangle/inverted-triangle)",
+  "bodyType": "hourglass" | "pear" | "apple" | "rectangle" | "inverted-triangle",
   "measurements": {
-    "chest": "number in inches",
-    "waist": "number in inches", 
-    "hips": "number in inches",
-    "shoulders": "number in inches",
-    "height": "estimated in cm"
+    "chest": number,
+    "waist": number,
+    "hips": number,
+    "shoulders": number,
+    "height": number
   },
-  "recommendedSize": "string (XS/S/M/L/XL/XXL)",
-  "fitAdvice": "string with personalized fit recommendations"
+  "recommendedSize": "XS" | "S" | "M" | "L" | "XL" | "XXL",
+  "fitAdvice": string
 }`
           },
           {
