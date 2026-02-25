@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 serve(async (req) => {
@@ -29,9 +29,24 @@ serve(async (req) => {
     console.log('Generating virtual try-on for:', clothingName);
 
     const fitDetails = bodyMeasurements ?
-      `\n\nFit guidance using estimated body measurements (inches): chest ${bodyMeasurements?.measurements?.chest}, waist ${bodyMeasurements?.measurements?.waist}, hips ${bodyMeasurements?.measurements?.hips}, shoulders ${bodyMeasurements?.measurements?.shoulders}, height ${bodyMeasurements?.measurements?.height}. Recommended size: ${bodyMeasurements?.recommendedSize}.\n- Use these numeric measurements to scale and warp the garment to match chest, shoulders and waist proportions.\n- Align neckline and shoulder seams precisely to the person.\n- Preserve natural garment drape, folds and perspective.\n- Respect occlusions (arms, hands, hair) and keep lighting/shadows consistent.\n- Avoid stretching, warping or flattening the body shape.\n` : '';
+      `\n\nBody analysis data (inches): body type: ${bodyMeasurements?.bodyType}, chest: ${bodyMeasurements?.measurements?.chest}, waist: ${bodyMeasurements?.measurements?.waist}, hips: ${bodyMeasurements?.measurements?.hips}, shoulders: ${bodyMeasurements?.measurements?.shoulders}, height: ${bodyMeasurements?.measurements?.height}. Recommended size: ${bodyMeasurements?.recommendedSize}.` : '';
 
-    const promptText = `Create a realistic virtual try-on image. Take the person from the first image and realistically overlay the clothing item (${clothingName}) from the second image onto them. The result must look like the person is truly wearing the garment, not like a cutout pasted on top. Maintain their original pose, body shape and background.${fitDetails}`;
+    const promptText = `You are a photorealistic virtual try-on engine. Generate ONE image showing the person from Image 1 wearing the garment from Image 2 (${clothingName}).
+
+LAYERING & FIT RULES:
+- Map the garment onto the person's actual body contours — shoulders, chest, waist, hips.
+- Scale the garment proportionally to the person's frame; do NOT stretch or squash the body.
+- Align neckline, shoulder seams, sleeve length, and hemline to anatomically correct positions.
+- Simulate realistic fabric physics: natural drape, gravity folds, tension creases at bends.
+- For tops: tuck or layer naturally over bottoms. For bottoms: sit at the correct waist/hip line.
+- For dresses/kurtas: follow the full silhouette from shoulders to hem.
+
+REALISM RULES:
+- Keep the person's exact pose, skin tone, face, hair, and background from Image 1.
+- Respect occlusions: arms in front of torso, hair over shoulders, hands over fabric.
+- Match lighting direction, colour temperature, and shadow angles from Image 1.
+- Add contact shadows where garment meets skin (collar, cuffs, waistband).
+- The final image must look like a real photograph, NOT a collage or overlay.${fitDetails}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
