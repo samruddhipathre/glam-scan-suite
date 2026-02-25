@@ -91,7 +91,7 @@ const VirtualTryOn = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } } 
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 1920 } } 
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -160,34 +160,24 @@ const VirtualTryOn = () => {
     }
   };
 
-  const convertImageToBase64 = async (imageUrl: string): Promise<string> => {
-    try {
-      // Fetch the image with no-cors to handle local assets
-      const response = await fetch(imageUrl, { mode: 'no-cors' });
-      
-      // Create a new image element to load the asset
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg', 0.9));
-          } else {
-            reject(new Error('Failed to get canvas context'));
-          }
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = imageUrl;
-      });
-    } catch (error) {
-      console.error('Error converting image to base64:', error);
-      throw error;
-    }
+  const convertImageToBase64 = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        } else {
+          reject(new Error('Failed to get canvas context'));
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageUrl;
+    });
   };
 
   const processVirtualTryOn = async (clothing: typeof clothes[0]) => {
