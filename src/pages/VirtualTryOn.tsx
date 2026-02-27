@@ -164,22 +164,40 @@ const VirtualTryOn = () => {
   const analyzeBody = async () => {
     if (!image) return;
     
+    // Validate image is a base64 data URI
+    if (!image.startsWith('data:image/')) {
+      toast.error("Invalid image format. Please re-upload your photo.");
+      return;
+    }
+    
     setIsAnalyzingBody(true);
     try {
       const { data, error } = await supabase.functions.invoke('analyze-body', {
         body: { image }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Parse error body if available
+        let errorMsg = error.message || 'Unknown error';
+        try {
+          const parsed = JSON.parse(errorMsg);
+          errorMsg = parsed.error || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       setBodyMeasurements(data);
       toast.success("Body analysis complete!");
     } catch (error: any) {
       console.error('Body analysis error:', error);
       const message = error?.message || '';
-      if (message.includes('Rate limit')) {
+      if (message.includes('Rate limit') || message.includes('429')) {
         toast.error('Rate limit exceeded. Please wait a moment and try again.');
-      } else if (message.includes('credits')) {
+      } else if (message.includes('credits') || message.includes('402')) {
         toast.error('AI credits depleted. Please add credits in Settings → Workspace → Usage.');
       } else {
         toast.error('Failed to analyze body measurements. Please try again.');
@@ -190,7 +208,32 @@ const VirtualTryOn = () => {
   };
 
   const convertImageToBase64 = async (imageUrl: string): Promise<string> => {
-    return compressImage(imageUrl, 600, 0.6);
+    // If already a data URI, just compress it
+    if (imageUrl.startsWith('data:')) {
+      return compressImage(imageUrl, 600, 0.6);
+    }
+    // For Vite asset URLs (relative paths), fetch as blob first
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            const dataUrl = reader.result as string;
+            const compressed = await compressImage(dataUrl, 600, 0.6);
+            resolve(compressed);
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read blob'));
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.error('Failed to fetch image for conversion:', e);
+      throw new Error('Could not convert clothing image');
+    }
   };
 
   const processVirtualTryOn = async (clothing: typeof clothes[0]) => {
@@ -200,13 +243,23 @@ const VirtualTryOn = () => {
     setSelectedClothing(clothing);
     
     try {
+      if (!image.startsWith('data:image/')) {
+        toast.error("Invalid photo format. Please re-upload your photo.");
+        setIsProcessing(false);
+        return;
+      }
+      
       if (!bodyMeasurements) {
         toast.message('Tip: Run Body Analysis for a better fit');
       }
       // Convert clothing image to base64
       console.log('Converting clothing image to base64...');
       const clothingImageBase64 = await convertImageToBase64(clothing.image);
-      console.log('Clothing image converted successfully');
+      console.log('Clothing image converted, length:', clothingImageBase64.length);
+      
+      if (!clothingImageBase64.startsWith('data:image/')) {
+        throw new Error('Failed to convert clothing image to base64');
+      }
       
       console.log('Calling generate-tryon edge function...');
       const { data, error } = await supabase.functions.invoke('generate-tryon', {
