@@ -189,24 +189,8 @@ const VirtualTryOn = () => {
     }
   };
 
-  const convertImageToBase64 = (imageUrl: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.85));
-        } else {
-          reject(new Error('Failed to get canvas context'));
-        }
-      };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = imageUrl;
-    });
+  const convertImageToBase64 = async (imageUrl: string): Promise<string> => {
+    return compressImage(imageUrl, 600, 0.6);
   };
 
   const processVirtualTryOn = async (clothing: typeof clothes[0]) => {
