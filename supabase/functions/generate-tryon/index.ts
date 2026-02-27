@@ -21,6 +21,24 @@ serve(async (req) => {
       );
     }
 
+    // Validate both images are base64 data URIs
+    if (!userImage.startsWith('data:image/')) {
+      console.error('Invalid user image format:', userImage.substring(0, 100));
+      return new Response(
+        JSON.stringify({ error: 'User image must be a base64 data URI' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    if (!clothingImage.startsWith('data:image/')) {
+      console.error('Invalid clothing image format:', clothingImage.substring(0, 100));
+      return new Response(
+        JSON.stringify({ error: 'Clothing image must be a base64 data URI' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Images validated. User image length:', userImage.length, 'Clothing image length:', clothingImage.length);
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');

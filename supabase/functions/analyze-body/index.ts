@@ -21,6 +21,17 @@ serve(async (req) => {
       );
     }
 
+    // Validate image is a base64 data URI, not a URL
+    if (!image.startsWith('data:image/')) {
+      console.error('Invalid image format received:', image.substring(0, 100));
+      return new Response(
+        JSON.stringify({ error: 'Image must be a base64 data URI (data:image/...), not a URL' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Image format validated, length:', image.length);
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
