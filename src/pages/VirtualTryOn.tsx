@@ -73,16 +73,40 @@ const VirtualTryOn = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context failed'));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = dataUrl;
+    });
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage(e.target?.result as string);
-        setTryonImage(null);
-        setSelectedClothing(null);
-        setBodyMeasurements(null);
-        toast.success("Photo uploaded successfully!");
+      reader.onload = async (e) => {
+        try {
+          const raw = e.target?.result as string;
+          const compressed = await compressImage(raw);
+          setImage(compressed);
+          setTryonImage(null);
+          setSelectedClothing(null);
+          setBodyMeasurements(null);
+          toast.success("Photo uploaded successfully!");
+        } catch {
+          toast.error("Failed to process image");
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -105,7 +129,7 @@ const VirtualTryOn = () => {
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (videoRef.current) {
       const canvas = document.createElement("canvas");
       canvas.width = videoRef.current.videoWidth;
@@ -114,12 +138,17 @@ const VirtualTryOn = () => {
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0);
         const photoData = canvas.toDataURL("image/jpeg");
-        setImage(photoData);
-        setTryonImage(null);
-        setSelectedClothing(null);
-        setBodyMeasurements(null);
-        stopCamera();
-        toast.success("Photo captured!");
+        try {
+          const compressed = await compressImage(photoData);
+          setImage(compressed);
+          setTryonImage(null);
+          setSelectedClothing(null);
+          setBodyMeasurements(null);
+          stopCamera();
+          toast.success("Photo captured!");
+        } catch {
+          toast.error("Failed to process captured image");
+        }
       }
     }
   };
@@ -160,24 +189,8 @@ const VirtualTryOn = () => {
     }
   };
 
-  const convertImageToBase64 = (imageUrl: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.85));
-        } else {
-          reject(new Error('Failed to get canvas context'));
-        }
-      };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = imageUrl;
-    });
+  const convertImageToBase64 = async (imageUrl: string): Promise<string> => {
+    return compressImage(imageUrl, 600, 0.6);
   };
 
   const processVirtualTryOn = async (clothing: typeof clothes[0]) => {

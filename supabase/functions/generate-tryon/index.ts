@@ -95,9 +95,18 @@ REALISM RULES:
     }
 
     const data = await response.json();
-    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    console.log('AI response structure:', JSON.stringify(Object.keys(data)));
+    
+    // Try multiple possible response formats
+    const choice = data.choices?.[0];
+    const generatedImage = 
+      choice?.message?.images?.[0]?.image_url?.url ||
+      choice?.message?.images?.[0]?.url ||
+      choice?.message?.images?.[0] ||
+      (typeof choice?.message?.content === 'string' && choice.message.content.startsWith('data:') ? choice.message.content : null);
     
     if (!generatedImage) {
+      console.error('Full AI response:', JSON.stringify(data).substring(0, 500));
       throw new Error('No image generated in response');
     }
 
