@@ -129,7 +129,7 @@ const VirtualTryOn = () => {
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (videoRef.current) {
       const canvas = document.createElement("canvas");
       canvas.width = videoRef.current.videoWidth;
@@ -138,12 +138,17 @@ const VirtualTryOn = () => {
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0);
         const photoData = canvas.toDataURL("image/jpeg");
-        setImage(photoData);
-        setTryonImage(null);
-        setSelectedClothing(null);
-        setBodyMeasurements(null);
-        stopCamera();
-        toast.success("Photo captured!");
+        try {
+          const compressed = await compressImage(photoData);
+          setImage(compressed);
+          setTryonImage(null);
+          setSelectedClothing(null);
+          setBodyMeasurements(null);
+          stopCamera();
+          toast.success("Photo captured!");
+        } catch {
+          toast.error("Failed to process captured image");
+        }
       }
     }
   };
