@@ -73,7 +73,7 @@ const VirtualTryOn = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
-  const compressImage = (dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+  const compressImage = (dataUrl: string, maxWidth = 600, quality = 0.5): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
