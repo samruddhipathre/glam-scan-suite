@@ -253,52 +253,58 @@ const VirtualTryOn = () => {
       }
       
       if (!bodyMeasurements) {
-        toast.message('Tip: Run Body Analysis for a better fit');
+        toast.message('Tip: Run Body Analysis first for better fit');
       }
-      // Convert clothing image to base64
-      console.log('Converting clothing image to base64...');
+
+      console.log('Converting clothing image...');
       const clothingImageBase64 = await convertImageToBase64(clothing.image);
-      console.log('Clothing image converted, length:', clothingImageBase64.length);
+      console.log('Clothing image ready, length:', clothingImageBase64.length);
       
       if (!clothingImageBase64.startsWith('data:image/')) {
-        throw new Error('Failed to convert clothing image to base64');
+        throw new Error('Failed to convert clothing image');
       }
       
-      console.log('Calling generate-tryon edge function...');
-      const { data, error } = await supabase.functions.invoke('generate-tryon', {
-        body: { 
-          userImage: image,
-          clothingImage: clothingImageBase64,
-          clothingName: clothing.name,
-          bodyMeasurements
+      console.log('Calling generate-tryon...');
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-tryon`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            userImage: image,
+            clothingImage: clothingImageBase64,
+            clothingName: clothing.name,
+            bodyMeasurements
+          }),
         }
-      });
+      );
 
-      console.log('Edge function response:', { data, error });
+      const data = await response.json();
+      console.log('Try-on response status:', response.status);
 
-      if (error) {
-        console.error('Edge function error:', error);
-        if (error.message?.includes('Rate limit')) {
-          toast.error("Rate limit exceeded. Please wait a moment and try again.");
-        } else if (error.message?.includes('credits')) {
-          toast.error("AI credits depleted. Please add credits to continue.");
-        } else {
-          toast.error(error.message || "Failed to generate virtual try-on. Please try again.");
-        }
-        return;
+      if (!response.ok) {
+        throw new Error(data?.error || `Try-on failed (${response.status})`);
       }
 
       if (!data?.tryonImage) {
-        console.error('No tryonImage in response:', data);
-        toast.error("No try-on image returned from AI");
-        return;
+        throw new Error('No try-on image returned');
       }
 
       setTryonImage(data.tryonImage);
       toast.success(`${clothing.name} applied successfully!`);
     } catch (error: any) {
       console.error('Virtual try-on error:', error);
-      toast.error(error?.message || "Failed to generate virtual try-on. Please try again.");
+      const msg = error?.message || '';
+      if (msg.includes('Rate limit') || msg.includes('429')) {
+        toast.error("Rate limit exceeded. Please wait and try again.");
+      } else if (msg.includes('credits') || msg.includes('402')) {
+        toast.error("AI credits depleted. Please add credits.");
+      } else {
+        toast.error(msg || "Failed to generate try-on. Please try again.");
+      }
     } finally {
       setIsProcessing(false);
     }
