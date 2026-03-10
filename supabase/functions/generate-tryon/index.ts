@@ -21,23 +21,20 @@ serve(async (req) => {
       );
     }
 
-    // Validate both images are base64 data URIs
     if (!userImage.startsWith('data:image/')) {
-      console.error('Invalid user image format:', userImage.substring(0, 100));
       return new Response(
         JSON.stringify({ error: 'User image must be a base64 data URI' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     if (!clothingImage.startsWith('data:image/')) {
-      console.error('Invalid clothing image format:', clothingImage.substring(0, 100));
       return new Response(
         JSON.stringify({ error: 'Clothing image must be a base64 data URI' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Images validated. User image length:', userImage.length, 'Clothing image length:', clothingImage.length);
+    console.log('Images validated. User:', userImage.length, 'Clothing:', clothingImage.length);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -46,26 +43,20 @@ serve(async (req) => {
 
     console.log('Generating virtual try-on for:', clothingName);
 
-    const fitDetails = bodyMeasurements ?
-      `\n\nBody analysis data (inches): body type: ${bodyMeasurements?.bodyType}, chest: ${bodyMeasurements?.measurements?.chest}, waist: ${bodyMeasurements?.measurements?.waist}, hips: ${bodyMeasurements?.measurements?.hips}, shoulders: ${bodyMeasurements?.measurements?.shoulders}, height: ${bodyMeasurements?.measurements?.height}. Recommended size: ${bodyMeasurements?.recommendedSize}.` : '';
+    const fitDetails = bodyMeasurements
+      ? `\nBody: ${bodyMeasurements.bodyType}, chest ${bodyMeasurements.measurements?.chest}", waist ${bodyMeasurements.measurements?.waist}", hips ${bodyMeasurements.measurements?.hips}", size ${bodyMeasurements.recommendedSize}.`
+      : '';
 
-    const promptText = `You are a photorealistic virtual try-on engine. Generate ONE image showing the person from Image 1 wearing the garment from Image 2 (${clothingName}).
+    const promptText = `Generate a single photorealistic image of the person from Image 1 wearing the garment from Image 2 (${clothingName}).
 
-LAYERING & FIT RULES:
-- Map the garment onto the person's actual body contours — shoulders, chest, waist, hips.
-- Scale the garment proportionally to the person's frame; do NOT stretch or squash the body.
-- Align neckline, shoulder seams, sleeve length, and hemline to anatomically correct positions.
-- Simulate realistic fabric physics: natural drape, gravity folds, tension creases at bends.
-- For tops: tuck or layer naturally over bottoms. For bottoms: sit at the correct waist/hip line.
-- For dresses/kurtas: follow the full silhouette from shoulders to hem.
+Rules:
+- Map garment onto the person's actual body contours (shoulders, chest, waist, hips)
+- Keep exact pose, face, skin tone, hair, background from Image 1
+- Realistic fabric drape, folds, shadows matching the lighting
+- Proper layering: arms in front of torso, hair over shoulders
+- Must look like a real photo, not a collage${fitDetails}`;
 
-REALISM RULES:
-- Keep the person's exact pose, skin tone, face, hair, and background from Image 1.
-- Respect occlusions: arms in front of torso, hair over shoulders, hands over fabric.
-- Match lighting direction, colour temperature, and shadow angles from Image 1.
-- Add contact shadows where garment meets skin (collar, cuffs, waistband).
-- The final image must look like a real photograph, NOT a collage or overlay.${fitDetails}`;
-
+    // Use the faster, higher quality image model
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -73,7 +64,7 @@ REALISM RULES:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-image',
+        model: 'google/gemini-3.1-flash-image-preview',
         messages: [
           {
             role: 'user',
@@ -94,41 +85,70 @@ REALISM RULES:
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          JSON.stringify({ error: 'Rate limit exceeded. Please wait a moment and try again.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'AI credits depleted. Please add credits to continue.' }),
+          JSON.stringify({ error: 'AI credits depleted. Please add credits in Settings → Workspace → Usage.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
       return new Response(
-        JSON.stringify({ error: 'Failed to generate try-on image' }),
+        JSON.stringify({ error: `AI service error (${response.status}). Please try again.` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const data = await response.json();
-    console.log('AI response structure:', JSON.stringify(Object.keys(data)));
+    // Safely parse response - handle empty or invalid JSON
+    let data;
+    const responseText = await response.text();
+    if (!responseText || responseText.trim().length === 0) {
+      console.error('Empty response from AI gateway');
+      return new Response(
+        JSON.stringify({ error: 'AI returned empty response. Please try again.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.error('Failed to parse AI response:', responseText.substring(0, 300));
+      return new Response(
+        JSON.stringify({ error: 'AI returned invalid response. Please try again.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('AI response keys:', JSON.stringify(Object.keys(data)));
+
+    // Check for error in response
+    if (data.error) {
+      console.error('AI returned error:', JSON.stringify(data.error));
+      return new Response(
+        JSON.stringify({ error: 'AI could not generate image. Please try a different photo or garment.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
-    // Try multiple possible response formats
     const choice = data.choices?.[0];
     const generatedImage = 
       choice?.message?.images?.[0]?.image_url?.url ||
       choice?.message?.images?.[0]?.url ||
-      choice?.message?.images?.[0] ||
+      (typeof choice?.message?.images?.[0] === 'string' ? choice.message.images[0] : null) ||
       (typeof choice?.message?.content === 'string' && choice.message.content.startsWith('data:') ? choice.message.content : null);
     
     if (!generatedImage) {
-      console.error('Full AI response:', JSON.stringify(data).substring(0, 500));
-      throw new Error('No image generated in response');
+      console.error('No image in response. Choice:', JSON.stringify(choice).substring(0, 500));
+      return new Response(
+        JSON.stringify({ error: 'AI did not generate an image. Please try again.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Virtual try-on generated successfully');
+    console.log('Virtual try-on generated successfully, length:', generatedImage.length);
 
     return new Response(
       JSON.stringify({ tryonImage: generatedImage }),
@@ -137,9 +157,8 @@ REALISM RULES:
 
   } catch (error) {
     console.error('Error in generate-tryon function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
