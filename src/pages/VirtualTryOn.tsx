@@ -164,7 +164,6 @@ const VirtualTryOn = () => {
   const analyzeBody = async () => {
     if (!image) return;
     
-    // Validate image is a base64 data URI
     if (!image.startsWith('data:image/')) {
       toast.error("Invalid image format. Please re-upload your photo.");
       return;
@@ -172,18 +171,22 @@ const VirtualTryOn = () => {
     
     setIsAnalyzingBody(true);
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-body', {
-        body: { image }
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-body`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ image }),
+        }
+      );
 
-      if (error) {
-        // Parse error body if available
-        let errorMsg = error.message || 'Unknown error';
-        try {
-          const parsed = JSON.parse(errorMsg);
-          errorMsg = parsed.error || errorMsg;
-        } catch {}
-        throw new Error(errorMsg);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Analysis failed (${response.status})`);
       }
       
       if (data?.error) {
@@ -194,13 +197,13 @@ const VirtualTryOn = () => {
       toast.success("Body analysis complete!");
     } catch (error: any) {
       console.error('Body analysis error:', error);
-      const message = error?.message || '';
-      if (message.includes('Rate limit') || message.includes('429')) {
-        toast.error('Rate limit exceeded. Please wait a moment and try again.');
-      } else if (message.includes('credits') || message.includes('402')) {
-        toast.error('AI credits depleted. Please add credits in Settings → Workspace → Usage.');
+      const msg = error?.message || '';
+      if (msg.includes('Rate limit') || msg.includes('429')) {
+        toast.error('Rate limit exceeded. Please wait and try again.');
+      } else if (msg.includes('credits') || msg.includes('402')) {
+        toast.error('AI credits depleted. Please add credits.');
       } else {
-        toast.error('Failed to analyze body measurements. Please try again.');
+        toast.error(msg || 'Failed to analyze body. Please try again.');
       }
     } finally {
       setIsAnalyzingBody(false);
